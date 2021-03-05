@@ -10,5 +10,5 @@ package practica1;
  * @author Rodrigo
  */
 public class CPractica1 {
-    
+    hola
 }
