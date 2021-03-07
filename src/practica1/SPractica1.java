@@ -5,7 +5,9 @@
  */
 package practica1;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -37,6 +39,7 @@ public class SPractica1 {
             Socket cl = s.accept();
             System.out.println("Cliente conectado desde "+cl.getInetAddress()+":"+cl.getPort());
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(cl.getOutputStream()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(cl.getInputStream()));
             
             //Enviando los nombres de los archivos al cliente
             String [] listaNombres = f2.list();
@@ -49,7 +52,6 @@ public class SPractica1 {
             paths = f2.listFiles();
          
             for(File path:paths) {
-                System.out.println("Envio nombres");
                pw.println(path.getName());
                if (path.isFile()){
                    pw.println("Archivo");
@@ -61,8 +63,25 @@ public class SPractica1 {
             }
             
             while(true){
-                
+                String opcionS = br.readLine();
+                int opcion = Integer.parseInt(opcionS);
+                switch(opcion){
+                    case(1):
+                        System.out.println("Caso para subir archivo");
+                        break;
+                    case(2):
+                        System.out.println("Caso para descargar archivo");
+                        break;
+                    case(3):
+                        System.out.println("Caso para eliminar archivo");
+                        break;   
+                }
+                if(opcion == 4){
+                    break;
+                }
             }
+            br.close();
+            pw.close();
             
         }catch(Exception e){
             e.printStackTrace();

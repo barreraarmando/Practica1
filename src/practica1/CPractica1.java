@@ -8,6 +8,8 @@ package practica1;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -33,6 +35,7 @@ public class CPractica1 {
             Socket cl = new Socket(host,pto);
             System.out.println("Conexion con el servidor "+dir+":"+pto+" establecida\n");
             BufferedReader brRed = new BufferedReader(new InputStreamReader(cl.getInputStream()));
+            PrintWriter pwRed = new PrintWriter(new OutputStreamWriter(cl.getOutputStream()));
             
             File f = new File("");
             String ruta = f.getAbsolutePath();
@@ -77,8 +80,17 @@ public class CPractica1 {
                 System.out.println("1. Subir archivo o carpeta");
                 System.out.println("2. Descargar archivo o carpeta");
                 System.out.println("3. Eliminar archivo o carpeta");
+                System.out.println("4. Salir");
                 String opcion = teclado.nextLine();
+                if (opcion.equals("4")){
+                    break;
+                }
+                pwRed.println(opcion);
+                pwRed.flush();
             }
+            pwRed.close();
+            brRed.close();
+            br.close();
             
         }catch(Exception e){
             e.printStackTrace();
