@@ -146,6 +146,60 @@ public class CPractica1 {
         }
     }
     
+    public static void recibirArchivo(File dirPadre, Socket cl){
+        try{
+            String ruta_archivos = dirPadre.getAbsolutePath();
+            DataInputStream dis = new DataInputStream(cl.getInputStream());
+            String nombre = dis.readUTF();
+            long tam = dis.readLong();
+            System.out.println("Comienza descarga del archivo "+nombre+" de "+tam+" bytes\n");
+            DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta_archivos+"\\"+nombre));
+            long recibidos=0;
+            int l=0, porcentaje=0;
+            while(recibidos<tam){
+                byte[] b = new byte[1500];
+                l = dis.read(b);
+                System.out.println("leidos: "+l);
+                dos.write(b,0,l);
+                dos.flush();
+                recibidos = recibidos + l;
+                porcentaje = (int)((recibidos*100)/tam);
+                System.out.print("\rRecibido el "+ porcentaje +" % del archivo");
+            }//while
+            System.out.println("\nArchivo recibido..\n");
+            dos.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    
+    public static void recibirCarpeta(String nombreCarpetaRecibida, String dirPadre, int cantArchivosCarpeta, Socket cl){
+        File f2 = new File(dirPadre+"\\"+nombreCarpetaRecibida+"\\");
+        f2.mkdirs();
+        f2.setWritable(true);
+        System.out.println("CantArchivosCarpeta: "+cantArchivosCarpeta);
+        for(int i=1; i<=cantArchivosCarpeta; i++){
+            recibirArchivo(f2, cl);
+        }
+    }
+    
+    public static void decidirArchivoCarpeta(File f2, Socket cl, BufferedReader br, String ruta_archivos){
+        try{
+            String opcionRecibida = br.readLine();
+            if(opcionRecibida.equals("archivo")){
+                recibirArchivo(f2, cl);
+            }else{
+                if(opcionRecibida.equals("carpeta")){
+                    String nombreCarpetaRecibida = br.readLine();
+                    int cantArchivosCarpeta = Integer.parseInt(br.readLine());
+                    recibirCarpeta(nombreCarpetaRecibida, ruta_archivos, cantArchivosCarpeta, cl);
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    
     public static void main(String args[]){
         try{
             
@@ -221,10 +275,30 @@ public class CPractica1 {
                         }
                         break;
                     case(2):
-                        System.out.println("Caso para descargar archivo");
+                        System.out.println("Ingresa el nombre del archivo o carpeta que quieres descargar del servidor");
+                        String nombreArchivoDescargar = teclado.nextLine();
+                        pwRed.println(nombreArchivoDescargar);
+                        pwRed.flush();
+                        String confirmacion = brRed.readLine();
+                        if (confirmacion.equals("Existe")){
+                            System.out.println("Comienza descarga del archivo "+nombreArchivoDescargar+"...");
+                            decidirArchivoCarpeta(f2, cl, brRed, ruta_archivos);
+                        }else{
+                            System.out.println("El archivo que escribiste no existe en el servidor");
+                        }
                         break;
                     case(3):
-                        System.out.println("Caso para eliminar archivo");
+                        System.out.println("Ingresa el nombre del archivo o carpeta que quieres eliminar del servidor");
+                        String nombreArchivoEliminar = teclado.nextLine();
+                        pwRed.println(nombreArchivoEliminar);
+                        pwRed.flush();
+                        String confirmacionE = brRed.readLine();
+                        if (confirmacionE.equals("Existe")){
+                            System.out.println("El archivo "+nombreArchivoEliminar+" ha sido eliminado \n");
+                            desplegarArchivos(brRed, pwRed, f2, ruta_archivos);
+                        }else{
+                            System.out.println("El archivo que escribiste no existe en el servidor");
+                        }
                         break;  
                     case(4):
                         break; 

@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -78,7 +79,6 @@ public class SPractica1 {
         f2.setWritable(true);
         System.out.println("CantArchivosCarpeta: "+cantArchivosCarpeta);
         for(int i=1; i<=cantArchivosCarpeta; i++){
-            System.out.println("Entro");
             recibirArchivo(f2, cl);
         }
     }
@@ -97,6 +97,75 @@ public class SPractica1 {
             }
         }catch(Exception e){
             e.printStackTrace();
+        }
+    }
+    
+    public static void enviarArchivo(File archivo, Socket cl){
+        try{
+            String path = archivo.getAbsolutePath();
+            String nombre = archivo.getName();
+            long tam = archivo.length();
+            System.out.println("Preparandose pare enviar archivo "+path+" de "+tam+" bytes\n");
+            DataOutputStream dos = new DataOutputStream(cl.getOutputStream());
+            DataInputStream dis = new DataInputStream(new FileInputStream(path));
+            dos.writeUTF(nombre);
+            dos.flush();
+            dos.writeLong(tam);
+            dos.flush();
+            long enviados = 0;
+            int l=0,porcentaje=0;
+            while(enviados<tam){
+                byte[] b = new byte[1500];
+                l=dis.read(b);
+                System.out.println("enviados: "+l);
+                dos.write(b,0,l);
+                dos.flush();
+                enviados = enviados + l;
+                porcentaje = (int)((enviados*100)/tam);
+                System.out.print("\rEnviado el "+porcentaje+" % del archivo");
+            }//while
+            System.out.println("\nArchivo enviado..");
+            dis.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    
+    public static void enviarCarpeta(File fSubir, Socket cl, PrintWriter pw) throws InterruptedException{
+        File[] hijos = fSubir.listFiles();
+        int cantArchivosCarpeta = hijos.length;
+        pw.println(cantArchivosCarpeta);
+        pw.flush();
+        for (File hijo : hijos) {
+            enviarArchivo(hijo, cl);
+            Thread.sleep(500);
+        }
+    }
+    
+    public static File buscarArchivo(String nombreArchivoDescargar, File f2){
+        File resultado = new File("");
+        File[] paths;
+        paths = f2.listFiles();
+
+        for(File path:paths) {
+           if(path.getName().equals(nombreArchivoDescargar)){
+               resultado = path;
+           }
+        }
+        return resultado;
+    }
+    
+    public static void eliminarArchivo(File archivoEliminar, File f2){
+        if (archivoEliminar.isFile()){
+            archivoEliminar.delete();
+        }else{
+            if (archivoEliminar.isDirectory()){
+                File[] archivos = archivoEliminar.listFiles();
+                for (File archivo:archivos){
+                    eliminarArchivo(archivo, f2);
+                }
+                archivoEliminar.delete();
+            }
         }
     }
     
@@ -132,10 +201,45 @@ public class SPractica1 {
                         decidirArchivoCarpeta(f2, cl, br, ruta_archivos);
                         break;
                     case(2):
-                        System.out.println("Caso para descargar archivo");
+                        String nombreArchivoDescargar = br.readLine();
+                        File archivoDescargar = buscarArchivo(nombreArchivoDescargar, f2);
+                        if (archivoDescargar.exists()){
+                            pw.println("Existe");
+                            pw.flush();
+                            System.out.println("Enviar archivo");
+                            if (archivoDescargar.isFile()){
+                                pw.println("archivo");
+                                pw.flush();
+                                enviarArchivo(archivoDescargar, cl);
+                            }else{
+                                if (archivoDescargar.isDirectory()){
+                                    pw.println("carpeta");
+                                    pw.flush();
+                                    pw.println(nombreArchivoDescargar);
+                                    pw.flush();
+                                    enviarCarpeta(archivoDescargar, cl, pw);
+                                }
+                            }
+                        }else{
+                            pw.println("NO");
+                            pw.flush();
+                            System.out.println("No existe el archivo a buscar");
+                        }
                         break;
                     case(3):
-                        System.out.println("Caso para eliminar archivo");
+                        String nombreArchivoEliminar = br.readLine();
+                        File archivoEliminar = buscarArchivo(nombreArchivoEliminar, f2);
+                        if (archivoEliminar.exists()){
+                            pw.println("Existe");
+                            pw.flush();
+                            System.out.println("Eliminar archivo");
+                            eliminarArchivo(archivoEliminar, f2);
+                            desplegarArchivos(f2, pw, ruta_archivos);
+                        }else{
+                            pw.println("NO");
+                            pw.flush();
+                            System.out.println("No existe el archivo a buscar");
+                        }
                         break;   
                 }
                 if(opcion == 4){
